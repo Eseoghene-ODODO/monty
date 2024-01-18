@@ -57,6 +57,9 @@ int unknown_op_error(char *opcode, unsigned int line_number)
  */
 int no_int_error(unsigned int line_number)
 {
-	fprintf(stderr, "L%u: usage: push integer\n", line_number);
+	if (line_number != 0 || line_number != 1)
+	{
+		fprintf(stderr, "L%u: usage: push integer\n", line_number);
+	}
 	return (EXIT_FAILURE);
 }
