@@ -1,6 +1,8 @@
 #include "monty.h"
 #include <string.h>
 
+#define MAX_LINE_LENGTH 1024
+
 void free_tokens(void);
 unsigned int token_arr_len(void);
 int is_empty_line(char *line, char *delims);
@@ -41,7 +43,7 @@ unsigned int token_arr_len(void)
 }
 
 /**
- * is_empty_line - Checks if a line read from getline only contains delimiters.
+ * is_empty_line - Checks if a line read from fgets only contains delimiters.
  * @line: A pointer to the line.
  * @delims: A string of delimiter characters.
  * Return: If the line only contains delimiters - 1.
@@ -115,8 +117,8 @@ void (*get_op_func(char *opcode))(stack_t**, unsigned int)
 int run_monty(FILE *script_fd)
 {
 	stack_t *stack = NULL;
-	char *line = NULL;
-	size_t len = 0, exit_status = EXIT_SUCCESS;
+	char line[MAX_LINE_LENGTH];
+	size_t len, exit_status = EXIT_SUCCESS;
 	unsigned int line_number = 0, prev_tok_len = 0;
 	void (*op_func)(stack_t**, unsigned int);
 
@@ -124,10 +126,17 @@ int run_monty(FILE *script_fd)
 	{
 		return (EXIT_FAILURE);
 	}
-	while (getline(&line, &len, script_fd) != (size_t)-1)
+	while (fgets(line, sizeof(line), script_fd) != NULL)
 	{
+		len = strlen(line);
 		line_number++;
+
+		if (line[len - 1] == '\n')
+		{
+			line[len - 1] = '\0';
+		}
 		op_toks = strtow(line, DELIMS);
+
 		if (op_toks == NULL)
 		{
 			if (is_empty_line(line, DELIMS))
@@ -137,12 +146,13 @@ int run_monty(FILE *script_fd)
 			free_stack(&stack);
 			return (malloc_error());
 		}
-		else if (op_toks[0][0] == '#') /* comment line */
+		else if (op_toks[0][0] == '#')
 		{
 			free_tokens();
 			continue;
 		}
 		op_func = get_op_func(op_toks[0]);
+
 		if (op_func == NULL)
 		{
 			free_stack(&stack);
@@ -152,6 +162,7 @@ int run_monty(FILE *script_fd)
 		}
 		prev_tok_len = token_arr_len();
 		op_func(&stack, line_number);
+
 		if (token_arr_len() != prev_tok_len)
 		{
 			if (op_toks && op_toks[prev_tok_len])
@@ -169,11 +180,12 @@ int run_monty(FILE *script_fd)
 	}
 	free_stack(&stack);
 
-	if (line && *line == 0)
+	if (feof(script_fd))
 	{
-		free(line);
+		return (exit_status);
+	}
+	else
+	{
 		return (malloc_error());
 	}
-	free(line);
-	return (exit_status);
 }
