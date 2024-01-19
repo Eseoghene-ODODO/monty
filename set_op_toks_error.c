@@ -33,4 +33,8 @@ void set_op_tok_error(int error_code)
 	new_toks[i] = NULL;
 	free(op_toks);
 	op_toks = new_toks;
+	if (exit_str == NULL)
+	{
+		free(exit_str);
+	}
 }
